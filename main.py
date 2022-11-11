@@ -1,5 +1,5 @@
 import handlers
-from create_bot import bot, dp
+from create_bot import dp
 from aiogram import executor
 
 async def onStart(_):
