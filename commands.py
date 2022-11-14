@@ -1,19 +1,17 @@
 import asyncio
 import random
 
-import view
-from create_bot import dp
-from aiogram import types
-
 import model
-from create_bot import bot
+import view
+from aiogram import types
+from create_bot import bot, dp
 
 
 async def start(message: types.Message):
     player = message.from_user
     model.set_player(player)
     await view.hello(message)
-    await asyncio.sleep(3)
+    await asyncio.sleep(10)
     dp.register_message_handler(player_turn)
     first_turn = random.randint(0,1)
     if first_turn:
@@ -24,8 +22,9 @@ async def start(message: types.Message):
 async def player_turn(message: types.Message):
     player = message.from_user
     model.set_player(player)
+    count = model.get_max_take()
     if (message.text).isdigit():
-        if 0 < int(message.text) < 29:
+        if 0 < int(message.text) < count+1:
             total_count = model.get_total_candies()
             player_take = int(message.text)
             total = total_count - player_take
@@ -45,10 +44,15 @@ async def player_turn(message: types.Message):
 
 async def enemy_turn(player):
     total_count = model.get_total_candies()
-    if total_count < 29:
+    count = model.get_max_take()
+    level = model.get_level()
+    if total_count < count+1:
         enemy_take = total_count
     else:
-        enemy_take = (total_count - 1)%28
+        if level == 1:
+            enemy_take = total_count % (count+1)
+        elif level == 0:
+            enemy_take = random.randint(1,count)
     total = total_count - enemy_take
     await bot.send_message(player.id, f'Бот взял {enemy_take} конфет, '
                                       f'и на столе осталось {total}')
@@ -74,3 +78,18 @@ async def set_total_candies(message: types.Message):
     model.set_total_candies(count)
     await bot.send_message(message.from_user.id, f'Максимально количество конфет изменили на'
                                                  f' {count}')
+
+async def set_max_take(message: types.Message):
+
+    count = int((message.text).split(" ")[1])
+    model.set_max_take(count)
+    await bot.send_message(message.from_user.id, f'Количество конфет за один ход изменили на'
+                                                 f' {count}')
+
+async def set_level(message: types.Message):
+
+    count = int((message.text).split(" ")[1])
+    model.set_level(count)
+    await bot.send_message(message.from_user.id, f'Уровень бота выбран:'
+                                                 f' {count}')
+    return                                             
